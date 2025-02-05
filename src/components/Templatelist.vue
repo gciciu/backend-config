@@ -285,8 +285,8 @@
         tplId: 0,
         dmgCurrentPage: 1,
         //restApiDomain: 'https://api.derproduktkonfigurator.de',
-        //restApiDomain: 'https://api.derproduktkonfigurator.de',
-        restApiDomain: 'https://api.produkt-konfigurator24.de',
+        //restApiDomain: 'https://api.produkt-konfigurator24.de',
+        restApiDomain: 'https://api.verkaufs-plattformen.de',
         //restApiDomain: 'https://api.glas-technik.ch',
         //restApiDomain: 'http://127.0.0.1:8000',
       }

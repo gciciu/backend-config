@@ -339,7 +339,7 @@
                     </mdb-col>
                     <mdb-col xl="3" md="4" sm="12" lg="3" class="pb-3">
                       <div class="input-group">
-                        <select v-if="data_type != 'matrix' && (data_type == 'radioBox' || data_type == 'checkBox' || data_type == 'externalResource' || data_type == 'imageList' || data_type == 'selectBox' || data_type == 'font' || data_type == 'tourDate')" class="browser-default custom-select gcm-selectFontSize" v-model="standardValue">
+                        <select v-if="data_type != 'matrix' && (data_type == 'radioBox' || data_type == 'checkBox' || data_type == 'externalResource' || data_type == 'imageList' || data_type == 'imageListLink' || data_type == 'selectBox' || data_type == 'font' || data_type == 'tourDate')" class="browser-default custom-select gcm-selectFontSize" v-model="standardValue">
                           <option v-for="option in standardValues" v-bind:value="option.value" :selected="option.selected">{{ option.text }}</option>
                         </select>
                         <mdb-input v-if="data_type == 'textField'" placeholder="standart Wert" id="fieldDefaultValue" v-model="standardValue"  class="mt-0 mb-0" ariaLabel="ID" ariaDescribedBy="fieldTitellabel">
@@ -382,6 +382,10 @@
                       <mdb-input placeholder="Einheit" v-model="unitValue"  class="mt-0 mb-1" ariaLabel="ID" ariaDescribedBy="unitValueLabel">
                       </mdb-input>
                     </mdb-col>
+                    <mdb-col xl="1"  md="2"  lg="1" sm="6" class="pb-1" v-if="data_type != 'imageBox'">
+                      <mdb-input placeholder="Field Einheit" v-model="displayedUnitValue"  class="mt-0 mb-1" ariaLabel="ID" ariaDescribedBy="unitValueLabel">
+                      </mdb-input>
+                    </mdb-col>
                     <mdb-col xl="1"  md="2"  lg="1" sm="12" class="pb-2">
                       <input type="checkbox" class="form-check-input" v-model="isDigit" id="dmgisDigit" name="dmgisDigit">
                       <label for="dmgisDigit">ist Nummer</label>
@@ -416,6 +420,10 @@
                     <mdb-col xl="1"  md="2"  lg="1" sm="12" class="pb-2">
                       <input type="checkbox" class="form-check-input" v-model="withZoom" id="withZoom" name="withZoom">
                       <label for="withZoom">mit Zoom</label>
+                    </mdb-col>
+                    <mdb-col xl="1"  md="2"  lg="1" sm="12" class="pb-2">
+                      <input type="checkbox" class="form-check-input" v-model="withLegend" id="withLegend" name="withLegend">
+                      <label for="withLegend">mit Legend</label>
                     </mdb-col>
                   </mdb-row>
                 </mdb-card-body>
@@ -719,14 +727,14 @@
               <h2 class="display-5">Merkmalwerte Einstellungen</h2>
             </mdb-col>
           </mdb-row>
-          <mdb-row class="mb-3" v-if="data_type === 'selectBox' ||  data_type === 'imageList'  ||  data_type === 'externalResource' || data_type === 'checkBox'|| data_type === 'radioBox' || data_type === 'font' || data_type === 'tourDate'">
+          <mdb-row class="mb-3" v-if="data_type === 'selectBox' || data_type === 'imageList' || data_type === 'imageListLink' || data_type === 'externalResource' || data_type === 'checkBox'|| data_type === 'radioBox' || data_type === 'font' || data_type === 'tourDate'">
             <mdb-col xl="12">
               <mdb-card>
                 <mdb-card-header color="info-color">Werteliste</mdb-card-header>
                 <mdb-card-body>
                   <mdb-row class="d-flex justify-content-center">
                     <mdb-col xl="12">
-                      <div v-if="data_type === 'selectBox' ||  data_type === 'imageList' ||  data_type === 'externalResource' || data_type === 'checkBox'|| data_type === 'radioBox' || data_type === 'font'">
+                      <div v-if="data_type === 'selectBox' ||  data_type === 'imageList' ||  data_type === 'imageListLink' ||  data_type === 'externalResource' || data_type === 'checkBox'|| data_type === 'radioBox' || data_type === 'font'">
                         <!--<file-drag-drop-instant></file-drag-drop-instant> -->
                         <div id="container-combined-image">
                           <table class="table">
@@ -741,11 +749,25 @@
                                   <option value="2">Prozentig</option>
                                 </select>
                               </td>
+                              <td>
+                                <select v-model="configuration_visible" class="browser-default custom-select gcm-selectFontSize">
+                                  <option value="0">False</option>
+                                  <option value="1">True</option>
+                                </select>
+                              </td>
+                              <td>
+                                <select v-model="configuration_price_visible" class="browser-default custom-select gcm-selectFontSize">
+                                  <option value="0">False</option>
+                                  <option value="1">True</option>
+                                </select>
+                              </td>
                               <td><mdb-input v-model="selectBoxPrice" name="selectBoxPrice" type="number" placeholder="Preis/Prozent" /></td>
                               <td class="text-right">
                                 <mdb-tooltip :options="{placement: 'top'}">
-                                  <span slot="tip">Neuen Wert anlegen</span>
-                                  <mdb-btn color="geccomButtonInfo" slot="reference" @click="addNewOptionForm"><mdb-icon icon="plus" /></mdb-btn>
+                                  <span v-if="!isAnyChangeRow()" slot="tip">Neuen Wert anlegen</span>
+                                  <span v-if="isAnyChangeRow()" slot="tip">Der Wert ändern</span>
+                                  <mdb-btn v-if="!isAnyChangeRow()" color="geccomButtonInfo" slot="reference" @click="addNewOptionForm"><mdb-icon icon="plus" /></mdb-btn>
+                                  <mdb-btn v-if="isAnyChangeRow()" color="geccomButtonInfo" slot="reference" @click="changeOptionForm"><mdb-icon icon="arrow-down" /></mdb-btn>
                                 </mdb-tooltip>
                               </td>
                             </tr>
@@ -753,6 +775,11 @@
                           <table class="table table-striped">
                             <thead class="thead">
                             <tr>
+                              <th scope="col">
+                                <div class="form-check">
+                                  <input class="form-check-input" v-model="checkAllElements" type="checkbox" @change="checkAll()"/>
+                                </div>
+                              </th>
                               <th scope="col">#</th>
                               <th scope="col">Title</th>
                               <th scope="col">SKU</th>
@@ -761,6 +788,7 @@
                               <th scope="col">Min</th>
                               <th scope="col">Max</th>
                               <th scope="col">Sichtbar</th>
+                              <th scope="col">Price Sichtbar</th>
                               <th scope="col">Aufschlagsart</th>
                               <th scope="col">Aufschlagskomponente</th>
                               <th scope="col">Preis</th>
@@ -768,6 +796,9 @@
                             </thead>
                             <draggable v-model="selectBoxData" tag="tbody">
                               <tr v-for="(selectbox,index) in selectBoxData" :key="selectbox.name">
+                                <td scope="row">
+                                    <input class="form-check-input" type="checkbox"  v-model="checkedRows[index]" />
+                                </td>
                                 <td scope="row">{{ index }}</td>
                                 <td>{{ selectbox.title }}</td>
                                 <td>{{ selectbox.sku }}</td>
@@ -776,10 +807,11 @@
                                 <td>{{ selectbox.min }}</td>
                                 <td>{{ selectbox.max }}</td>
                                 <td>{{ selectbox.configuration_visible }}</td>
+                                <td>{{ selectbox.configuration_price_visible }}</td>
                                 <td>{{ selectbox.configuration_procenttype == 2 ? "Prozentig" : "Fix Preis"}}</td>
                                 <td>{{ selectbox.reatalted_price_component }}</td>
                                 <td>{{ selectbox.price }}</td>
-                                <td width="20%" class="text-right">
+                                <td width="18%" class="text-right">
                                   <mdb-tooltip :options="{placement: 'top'}">
                                     <span slot="tip">Wert editieren</span>
                                     <mdb-btn color="geccomButtonTransparent" slot="reference" @click="openEditConfigurationOptionModal(index)" icon="edit"></mdb-btn>
@@ -1059,7 +1091,7 @@
                         <mdb-col md="2">
                           <mdb-form-inline class="gcm-ruleCheckbox">
                             <div v-for="(propertyItemValue, propertyItemValueIndex) in newRule[newRuleIndex].condition[conditionIndex].conditionValue">
-                              <div v-if="newRule[newRuleIndex].condition[conditionIndex].dataType == 'radioBox' || newRule[newRuleIndex].condition[conditionIndex].dataType == 'checkBox' || newRule[newRuleIndex].condition[conditionIndex].dataType == 'externalResource' || newRule[newRuleIndex].condition[conditionIndex].dataType == 'imageList' || newRule[newRuleIndex].condition[conditionIndex].dataType == 'selectBox'">
+                              <div v-if="newRule[newRuleIndex].condition[conditionIndex].dataType == 'radioBox' || newRule[newRuleIndex].condition[conditionIndex].dataType == 'checkBox' || newRule[newRuleIndex].condition[conditionIndex].dataType == 'externalResource' || newRule[newRuleIndex].condition[conditionIndex].dataType == 'imageList' || newRule[newRuleIndex].condition[conditionIndex].dataType == 'imageListLink' || newRule[newRuleIndex].condition[conditionIndex].dataType == 'selectBox'">
                                 <input type="checkbox" class="form-check-input" :id="`${ruleItem.id}_${inputCond.id}_${propertyItemValue.name}`" v-model="newRule[newRuleIndex].condition[conditionIndex].conditionValue[propertyItemValueIndex].value" :value="`${ruleItem.id}_${inputCond.id}_${propertyItemValue.name}`">
                                 <label class="form-check-label" :for="`${ruleItem.id}_${inputCond.id}_${propertyItemValue.name}`">{{propertyItemValue.name}}</label>
                               </div>
@@ -1067,7 +1099,7 @@
                                 min <input type="text" class="form-check-input" :id="`${ruleItem.id}_${inputCond.id}_${propertyItemValue.name}`" v-model="newRule[newRuleIndex].condition[conditionIndex].conditionValue[propertyItemValueIndex].min">
                                 max <input type="text" class="form-check-input" :id="`${ruleItem.id}_${inputCond.id}_${propertyItemValue.name}`" v-model="newRule[newRuleIndex].condition[conditionIndex].conditionValue[propertyItemValueIndex].max">
                               </div>
-                              <div v-else-if="newRule[newRuleIndex].condition[conditionIndex].dataType == 'textField'  && (newRule[newRuleIndex].condition[conditionIndex].conditionBy == 4  || newRule[newRuleIndex].condition[conditionIndex].conditionBy == 9 || newRule[newRuleIndex].condition[conditionIndex].conditionBy == 13|| newRule[newRuleIndex].condition[conditionIndex].conditionBy == 14)">
+                              <div v-else-if="newRule[newRuleIndex].condition[conditionIndex].dataType == 'textField'  && (newRule[newRuleIndex].condition[conditionIndex].conditionBy == 4  || newRule[newRuleIndex].condition[conditionIndex].conditionBy == 9 || newRule[newRuleIndex].condition[conditionIndex].conditionBy == 10 || newRule[newRuleIndex].condition[conditionIndex].conditionBy == 13|| newRule[newRuleIndex].condition[conditionIndex].conditionBy == 14)">
                                 Wert <input type="text" class="form-check-input" :id="`${ruleItem.id}_${inputCond.id}_${propertyItemValue.name}`" v-model="newRule[newRuleIndex].condition[conditionIndex].conditionValue[propertyItemValueIndex].min">
                               </div>
                               <div v-else-if="newRule[newRuleIndex].condition[conditionIndex].dataType == 'textField'  && (newRule[newRuleIndex].condition[conditionIndex].conditionBy == 11 || newRule[newRuleIndex].condition[conditionIndex].conditionBy == 12)">
@@ -1212,6 +1244,13 @@
                           <td><mdb-input  type="text" placeholder="Bildhöhe" v-model="configuration_image_height" /></td>
                           <td><mdb-input  type="number" placeholder="Bildposition X" v-model="configuration_position_x" /></td>
                           <td><mdb-input  type="text" placeholder="Bildposition Y" v-model="configuration_position_y" /></td>
+                          <td><mdb-input  type="text" placeholder="Link" v-model="configuration_link" /></td>
+                          <td>
+                            <select v-model="configuration_price_visible" class="browser-default custom-select gcm-selectFontSize">
+                              <option value="0">Nein</option>
+                              <option value="1">Ja</option>
+                            </select>
+                          </td>
                         </tr>
                         </tbody>
                       </table>
@@ -1456,6 +1495,7 @@
           { text: 'Datentypen', value: null, disabled: true},
           { text: 'Checkbox', value: 'checkBox' },
           { text: 'Liste mit Bilder', value: 'imageList' },
+          { text: 'Liste mit Bilder als Link', value: 'imageListLink' },
           { text: 'Expression', value: 'expression' },
           { text: 'Matrix', value: 'matrix' },
           { text: 'ProductAttribute', value: 'productAttribute' },
@@ -1530,6 +1570,7 @@
           id: null, propertyId: null, propertyName: null, relationalCondition: null, operationCondition: null, operationTerm:null, conditionBy: null , conditionValue:[]
         },
         configuration_visible: false,
+        configuration_price_visible: false,
         ruleItem: {id: null, condition: null, allowedValues: [], conditionalEvent:null},
         allRules :[] ,
         imgRelatedCollection: [],
@@ -1674,11 +1715,11 @@
         gcmShopBaseUrl: 'https://holzplatte.de',
         minValue: '',
         maxValue: '',
-        unitiValue: '',
         procenttype: '1',
         changingMainGroupId: 0,
         changingGroupId: 0,
         unitValue: '',
+        displayedUnitValue: '',
         changeGroupModal: false,
         propertyToImageBox: '',
         imgWidth: '',
@@ -1693,6 +1734,7 @@
         configuration_svgContent:'',
         isHidden: null,
         withZoom: null,
+        withLegend: null,
         groupnameNameToCopy: '',
         propertyNameRightClicked:'',
         propertyNameTarget: '',
@@ -1707,6 +1749,8 @@
         selectedLanguageField:"",
         editorData: '',
         languageFileAdditionalPopup: false,
+        checkedRows: [],
+        checkAllElements: false,
         editorConfig: {
           //The configuration of the editor.
         }
@@ -1728,6 +1772,19 @@
       }
     },
     methods: {
+      isAnyChangeRow() {
+        let anyChange = this.checkedRows.find((element) => element == true);
+        return anyChange;
+      },
+      checkAll() {
+        for(let i in this.checkedRows) {
+          if(this.checkAllElements) {
+            this.checkedRows[i] = true;
+          } else {
+            this.checkedRows[i] = false;
+          }
+        }
+      },
       onPastePropertyByGroup() {
         this.copyPropertyComponent();
       },
@@ -1900,6 +1957,7 @@
                   if(imgRelatedCollectionLocal.data_type == "radioBox" || imgRelatedCollectionLocal.data_type == "externalResource"
                           || imgRelatedCollectionLocal.data_type == "selectBox" || imgRelatedCollectionLocal.data_type == "imageList"
                           || imgRelatedCollectionLocal.data_type == "checkBox" || imgRelatedCollectionLocal.data_type == "font"
+                          || imgRelatedCollectionLocal.data_type == "imageListLink"
                   ) {
                     let additionalDataImg= JSON.parse(this.decode(imgRelatedCollectionLocal.additionalData));
                     additionalDataImg.forEach(function (itemValueObj, itemValueObjIndex) {
@@ -2016,7 +2074,7 @@
         //self.newRule[rowId].condition[columnId].conditionBy
         let keyObj = this.getAllPropertyValues(parentUniqueId);
         if(parentUniqueId == keyObj.uniqueId && (keyObj.data_type == "radioBox" || keyObj.data_type == "externalResource"
-                || keyObj.data_type == "selectBox" || keyObj.data_type == "imageList" || keyObj.data_type == "checkBox" || keyObj.data_type == "font")
+                || keyObj.data_type == "selectBox" || keyObj.data_type == "imageList" || keyObj.data_type == "imageListLink" || keyObj.data_type == "checkBox" || keyObj.data_type == "font")
         ) {
           let additionalData = JSON.parse(this.decode(keyObj.additionalData));
           if(additionalData != null) {
@@ -2116,7 +2174,7 @@
         //console.log("newRule-:::"+JSON.stringify(this.newRule));
       },
       deleteNewRule(index) {
-        console.log(JSON.stringify(this.allRules));
+        //console.log(JSON.stringify(this.allRules));
         this.newRule.splice(index,1)
       },
       deleteRowConditionGroup(index) {
@@ -2220,7 +2278,7 @@
         this.matrixAttachedToProperty.splice(item,1);
       },
       getSelectValue(data_type){
-        console.log(data_type);
+        //console.log(data_type);
       },
       toggleAce () {
         this.$refs['fullscreenAceEditor'].toggle()
@@ -2260,7 +2318,7 @@
         this.dataTypes.sort();
       },
       getChooseMatrixPriceCalculation(newValue) {
-        console.log("newValue:::"+newValue);
+        //console.log("newValue:::"+newValue);
         this.matrixPriceCalculation = newValue;
       },
       selectOptionStandardValue(key) {
@@ -2281,7 +2339,7 @@
         //console.log("ZZZ"+JSON.stringify(this.newRule[newRuleIndex].condition[conditionIndex].conditionValue));
         Object.values(self.allPropertyValues).forEach(function (keyObj) {
           if(value == keyObj.name && (keyObj.data_type == "radioBox" || keyObj.data_type == "externalResource"
-                  || keyObj.data_type == "selectBox" || keyObj.data_type == "imageList" || keyObj.data_type == "checkBox" || keyObj.data_type == "font")
+                  || keyObj.data_type == "selectBox" || keyObj.data_type == "imageList"|| keyObj.data_type == "imageListLink" || keyObj.data_type == "checkBox" || keyObj.data_type == "font")
           ) {
             let additionalData = JSON.parse(this.decode(keyObj.additionalData));
             if(additionalData != null) {
@@ -2364,7 +2422,7 @@
 
         // this.selectBoxData[indexSelectBox] = {title: this.selectBoxTitle, value: this.selectBoxValue, price :this.selectBoxPrice, configuration: null};
         this.selectBoxData[indexSelectBox] = {uniqueId: Date.now(), tourDestination: this.tourDestination, tourType: this.tourType, arrival: this.arrival.toLocaleDateString(), departure: this.departure.toLocaleDateString(), tourPrice :this.tourPrice};
-        console.log(JSON.stringify(this.selectBoxData));
+        //console.log(JSON.stringify(this.selectBoxData));
         //this.$emit('update-select-box', this.selectBox);
         this.tourDestination = '';
         this.tourType = '';
@@ -2413,8 +2471,8 @@
         //console.log("UIUIU");
         this.configurationData =
                 {
-                  "price": this.configuration_price, 'title': this.configuration_title,"min": this.configuration_min,"max": this.configuration_max, 'value':this.configuration_value, "uniqueId" : this.configuration_uniqueid,"configuration_visible":this.configuration_visible,
-                  "image_name": this.configuration_image_name, "image_width": this.configuration_image_width, "configuration_svgContent": this.configuration_svgContent, "image_height": this.configuration_image_height, "reatalted_price_component":this.reatalted_price_component,
+                  "price": this.configuration_price, 'title': this.configuration_title,"min": this.configuration_min,"max": this.configuration_max, 'value':this.configuration_value, "uniqueId" : this.configuration_uniqueid,"configuration_visible":this.configuration_visible,"configuration_price_visible":this.configuration_price_visible,
+                  "image_name": this.configuration_image_name, "image_width": this.configuration_image_width, "configuration_svgContent": this.configuration_svgContent, "configuration_link": this.configuration_link, "image_height": this.configuration_image_height, "reatalted_price_component":this.reatalted_price_component,
                   "position_x": this.configuration_position_x, "position_y": this.configuration_position_y, "sku": this.configuration_sku, "configuration_procenttype": this.configuration_procenttype,
                   "additionalInformation": configurationPropertyAdditionalInformation
                 };
@@ -2630,6 +2688,27 @@
                   console.log(error.config);
                 });
       },
+      changeOptionForm: function() {
+        let self = this;
+        if(self.isAnyChangeRow()) {
+          self.checkedRows.forEach((item, index)=> {
+            if(item) {
+              if(self.procenttype != "") {
+                self.selectBoxData[index].procenttype = self.procenttype;
+              }
+              if(self.configuration_visible != "") {
+                self.selectBoxData[index].configuration_visible = self.configuration_visible;
+              }
+              if(self.configuration_price_visible != "") {
+                self.selectBoxData[index].configuration_price_visible = self.configuration_price_visible;
+              }
+              if(self.selectBoxPrice != "") {
+                self.selectBoxData[index].selectBoxPrice = self.selectBoxPrice;
+              }
+            }
+          });
+        }
+      },
       addNewOptionForm: function() {
         let indexSelectBox = 0;
         if(this.selectBoxData.length != 0) {
@@ -2656,7 +2735,7 @@
         //this.$emit('update-select-box', this.selectBox);
       },
       getDataTypesValue(value, text) {
-        console.log(value);
+        //console.log(value);
       },
       ruleList() {
         /*
@@ -2715,11 +2794,13 @@
         this.configuration_value = this.selectBoxData[index].value;
         this.configuration_price = this.selectBoxData[index].price;
         this.configuration_procenttype = this.selectBoxData[index].configuration_procenttype;
+        this.configuration_price_visible = this.selectBoxData[index].configuration_price_visible;
 
         this.configuration_sku = this.selectBoxData[index].sku;
         this.configuration_image_name = this.selectBoxData[index].image_name;
         this.configuration_image_width = this.selectBoxData[index].image_width;
         this.configuration_svgContent = this.selectBoxData[index].configuration_svgContent;
+        this.configuration_link = this.selectBoxData[index].configuration_link;
         this.configuration_image_height = this.selectBoxData[index].image_height;
         this.configuration_position_x = this.selectBoxData[index].position_x;
         this.configuration_position_y = this.selectBoxData[index].position_y;
@@ -2945,11 +3026,11 @@
                     ) {
                       let dataSelectDB = self.propertiesValue[self.currentSelectedProperty].additionalData;
 
-                      //let dataSelectDB = 'W3sicHJpY2UiOiIwIiwidGl0bGUiOiJPaG5lIiwidmFsdWUiOiJPaG5lIiwidW5pcXVlSWQiOjE2MTU1NTYwMzA5MDEsImNvbmZpZ3VyYXRpb25fdmlzaWJsZSI6ZmFsc2UsImltYWdlX25hbWUiOiJtZWRpYVwvZG1nY29uZmlndXJhdG9yXC8zNFwvOTFcLzdiXC8xNjE1NjQ4OTU0LW9obmUxLnBuZyIsImltYWdlX3dpZHRoIjoiNzAiLCJpbWFnZV9oZWlnaHQiOiI3MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGwsInByb2NlbnR0eXBlIjoiUHJvemVudGlnIn0seyJwcmljZSI6IjUuMCIsInRpdGxlIjoiV2VpXHUwMGRmIEhvY2hnbGFueiIsIm1pbiI6IiIsIm1heCI6IiIsInZhbHVlIjoiV2VpXHUwMGRmIEhvY2hnbGFueiIsInVuaXF1ZUlkIjoxNjM5MDg1NzM2MjYzLCJjb25maWd1cmF0aW9uX3Zpc2libGUiOmZhbHNlLCJpbWFnZV9uYW1lIjoibWVkaWFcL2RtZ2NvbmZpZ3VyYXRvclwvNDBcLzhjXC84OVwvMTYzOTA4NTc4NS1XZWlcdTAwZGYgSG9jaGdsYW56LnBuZyIsImltYWdlX3dpZHRoIjoiIiwiaW1hZ2VfaGVpZ2h0IjoiNzAiLCJyZWF0YWx0ZWRfcHJpY2VfY29tcG9uZW50IjpudWxsfSx7InByaWNlIjoiNS4wIiwidGl0bGUiOiJTY2h3YXJ6IEhvY2hnbGFueiIsIm1pbiI6IiIsIm1heCI6IiIsInZhbHVlIjoiU2Nod2FyeiBIb2NoZ2xhbnoiLCJ1bmlxdWVJZCI6MTY2MjYyOTM3ODkzNiwiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcLzEyXC81NlwvNWNcLzE2NjI2Mjk0NTgtUEtTY2h3YXJ6SG9jaGdsYW56LnBuZyIsImltYWdlX3dpZHRoIjoiNzAiLCJpbWFnZV9oZWlnaHQiOiI3MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGx9LHsicHJpY2UiOiI1LjAiLCJ0aXRsZSI6IlJvdCBIb2NoZ2xhbnoiLCJtaW4iOiIiLCJtYXgiOiIiLCJ2YWx1ZSI6IlJvdCBIb2NoZ2xhbnoiLCJ1bmlxdWVJZCI6MTY2MjYyOTYwMjU2OSwiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcL2IxXC84ZFwvZWVcLzE2NjI2Mjk2MjMtUEtSb3RIb2NoZ2xhbnoucG5nIiwiaW1hZ2Vfd2lkdGgiOiI3MCIsImltYWdlX2hlaWdodCI6IjcwIiwicmVhdGFsdGVkX3ByaWNlX2NvbXBvbmVudCI6bnVsbH0seyJwcmljZSI6IjUuMCIsInRpdGxlIjoiU2NoaWVmZXJncmF1IEhvY2hnbGFueiIsIm1pbiI6IiIsIm1heCI6IiIsInZhbHVlIjoiU2NoaWVmZXJncmF1IEhvY2hnbGFueiIsInVuaXF1ZUlkIjoxNjYyNjI5NzEzNTc4LCJjb25maWd1cmF0aW9uX3Zpc2libGUiOmZhbHNlLCJpbWFnZV9uYW1lIjoibWVkaWFcL2RtZ2NvbmZpZ3VyYXRvclwvOGJcLzM5XC83YVwvMTY2MjYyOTgxMS1LU2NoaWVmZXJncmF1SG9jaGdsYW56LnBuZyIsImltYWdlX3dpZHRoIjoiNzAiLCJpbWFnZV9oZWlnaHQiOiI3MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGx9LHsicHJpY2UiOiI1LjAiLCJ0aXRsZSI6IkFob3JuIE5hdHVyIiwidmFsdWUiOiJBaG9ybiBOYXR1ciIsInVuaXF1ZUlkIjoxNjE3MzA5MzE5NzY3LCJjb25maWd1cmF0aW9uX3Zpc2libGUiOmZhbHNlLCJpbWFnZV9uYW1lIjoibWVkaWFcL2RtZ2NvbmZpZ3VyYXRvclwvY2NcLzY1XC84OVwvMTYxNzMwOTM0My1BaG9ybiBOYXR1ci5wbmciLCJpbWFnZV9oZWlnaHQiOiI3MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGwsImNvbmZpZ3VyYXRpb25fcHJvY2VudHR5cGUiOiIxIn0seyJwcmljZSI6IjUuMCIsInRpdGxlIjoiQWx1IEdlc2NobGlmZmVuIiwidmFsdWUiOiJBbHUgR2VzY2hsaWZmZW4iLCJ1bmlxdWVJZCI6MTYxNzMwOTM5NzM0OSwiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcL2YwXC9mMlwvNGRcLzE2MTczMDk0MTQtQWx1IGdlc2NobGlmZmVuLnBuZyIsImltYWdlX2hlaWdodCI6IjcwIiwicmVhdGFsdGVkX3ByaWNlX2NvbXBvbmVudCI6bnVsbCwiY29uZmlndXJhdGlvbl9wcm9jZW50dHlwZSI6IjEifSx7InByaWNlIjoiNS4wIiwidGl0bGUiOiJBbnRocmF6aXQiLCJ2YWx1ZSI6IkFudGhyYXppdCIsInVuaXF1ZUlkIjoxNjEzMTI4MDg3MzUzLCJjb25maWd1cmF0aW9uX3Zpc2libGUiOmZhbHNlLCJpbWFnZV9uYW1lIjoibWVkaWFcL2RtZ2NvbmZpZ3VyYXRvclwvMTlcL2MyXC8yNlwvMTYxNjU5MjQwMi1BbnRocmF6aXQucG5nIiwiaW1hZ2VfaGVpZ2h0IjoiNzAiLCJyZWF0YWx0ZWRfcHJpY2VfY29tcG9uZW50IjpudWxsLCJjb25maWd1cmF0aW9uX3Byb2NlbnR0eXBlIjoiMSJ9LHsicHJpY2UiOiI1LjAiLCJ0aXRsZSI6IkF0b2xsYmxhdSIsInZhbHVlIjoiQXRvbGxibGF1IiwidW5pcXVlSWQiOjE2MTMxMjc5MDQyNTAsImNvbmZpZ3VyYXRpb25fdmlzaWJsZSI6ZmFsc2UsImltYWdlX25hbWUiOiJtZWRpYVwvZG1nY29uZmlndXJhdG9yXC85M1wvZjhcLzRiXC8xNjE2ODQ4NjkxLUF0b2xsYmxhdS5wbmciLCJpbWFnZV9oZWlnaHQiOiI3MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGwsImNvbmZpZ3VyYXRpb25fcHJvY2VudHR5cGUiOiIxIn0seyJwcmljZSI6IjUuMCIsInRpdGxlIjoiQmVpZ2UiLCJ2YWx1ZSI6IkJlaWdlIiwidW5pcXVlSWQiOjE2MTMxMjc5Mjg5MzYsImNvbmZpZ3VyYXRpb25fdmlzaWJsZSI6ZmFsc2UsImltYWdlX25hbWUiOiJtZWRpYVwvZG1nY29uZmlndXJhdG9yXC9hOFwvMzVcLzQyXC8xNjE2NTkyNTE2LUJlaWdlLnBuZyIsImltYWdlX2hlaWdodCI6IjcwIiwicmVhdGFsdGVkX3ByaWNlX2NvbXBvbmVudCI6bnVsbCwiY29uZmlndXJhdGlvbl9wcm9jZW50dHlwZSI6IjEifSx7InByaWNlIjoiNS4wIiwidGl0bGUiOiJCZXRvbiBkdW5rZWwiLCJ2YWx1ZSI6IkJldG9uIGR1bmtlbCIsInVuaXF1ZUlkIjoxNjE2ODQ5MDc3MDkzLCJjb25maWd1cmF0aW9uX3Zpc2libGUiOmZhbHNlLCJpbWFnZV9uYW1lIjoibWVkaWFcL2RtZ2NvbmZpZ3VyYXRvclwvNGFcL2Q1XC83ZlwvMTYxNjg0OTEwNS1CZXRvbiBkdW5rZWwucG5nIiwiaW1hZ2VfaGVpZ2h0IjoiNzAiLCJyZWF0YWx0ZWRfcHJpY2VfY29tcG9uZW50IjpudWxsLCJjb25maWd1cmF0aW9uX3Byb2NlbnR0eXBlIjoiMSJ9LHsicHJpY2UiOiI1LjAiLCJ0aXRsZSI6IkJldG9uIGhlbGwiLCJ2YWx1ZSI6IkJldG9uIGhlbGwiLCJ1bmlxdWVJZCI6MTYxNjg0ODk0MzQ3NywiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcL2I2XC8wN1wvYjFcLzE2MTY4NDg5OTctQmV0b24gaGVsbC5wbmciLCJpbWFnZV9oZWlnaHQiOiI3MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGwsImNvbmZpZ3VyYXRpb25fcHJvY2VudHR5cGUiOiIxIn0seyJwcmljZSI6IjUuMCIsInRpdGxlIjoiRWljaGUgU2FsemJ1cmciLCJ2YWx1ZSI6IkVpY2hlIFNhbHpidXJnIiwidW5pcXVlSWQiOjE2MTczMDk2MDY4MTMsImNvbmZpZ3VyYXRpb25fdmlzaWJsZSI6ZmFsc2UsImltYWdlX25hbWUiOiJtZWRpYVwvZG1nY29uZmlndXJhdG9yXC83YVwvMThcLzMzXC8xNjE3MzA5NjMzLUVpY2hlIFNhbHpidXJnLnBuZyIsImltYWdlX2hlaWdodCI6IjcwIiwicmVhdGFsdGVkX3ByaWNlX2NvbXBvbmVudCI6bnVsbCwiY29uZmlndXJhdGlvbl9wcm9jZW50dHlwZSI6IjEifSx7InByaWNlIjoiNS4wIiwidGl0bGUiOiJFaWNoZSBTYW5yZW1vIFRhYmFjY28iLCJ2YWx1ZSI6IkVpY2hlIFNhbnJlbW8gVGFiYWNjbyIsInVuaXF1ZUlkIjoxNjEzMTI4MDYxMjc0LCJjb25maWd1cmF0aW9uX3Zpc2libGUiOmZhbHNlLCJpbWFnZV9uYW1lIjoibWVkaWFcL2RtZ2NvbmZpZ3VyYXRvclwvN2FcLzZmXC9mMFwvMTYxNjU5MjYxNC1FaWNoZSBTYW5yZW1vIFRhYmFjY28ucG5nIiwiaW1hZ2VfaGVpZ2h0IjoiNzAiLCJyZWF0YWx0ZWRfcHJpY2VfY29tcG9uZW50IjpudWxsLCJjb25maWd1cmF0aW9uX3Byb2NlbnR0eXBlIjoiMSJ9LHsicHJpY2UiOiI1LjAiLCJ0aXRsZSI6IkVpZXJzY2hhbGUiLCJ2YWx1ZSI6IkVpZXJzY2hhbGUiLCJ1bmlxdWVJZCI6MTYxMzEyODEyOTI0NywiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcLzA2XC9lYlwvYjJcLzE2MTY1OTI2NDAtRWllcnNjaGFsZS5wbmciLCJpbWFnZV9oZWlnaHQiOiI3MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGwsImNvbmZpZ3VyYXRpb25fcHJvY2VudHR5cGUiOiIxIn0seyJwcmljZSI6IjUuMCIsInRpdGxlIjoiRXNjaGUgVGFvcm1pbmEgVm9ndWUiLCJ2YWx1ZSI6IkVzY2hlIFRhb3JtaW5hIFZvZ3VlIiwidW5pcXVlSWQiOjE2MTczMDk2ODY4MTEsImNvbmZpZ3VyYXRpb25fdmlzaWJsZSI6ZmFsc2UsImltYWdlX25hbWUiOiJtZWRpYVwvZG1nY29uZmlndXJhdG9yXC8wM1wvNTlcLzg3XC8xNjE3MzA5NzE0LUVzY2hlIFRhb3JtaW5hIFZvZ3VlLnBuZyIsImltYWdlX2hlaWdodCI6IjcwIiwicmVhdGFsdGVkX3ByaWNlX2NvbXBvbmVudCI6bnVsbCwiY29uZmlndXJhdGlvbl9wcm9jZW50dHlwZSI6IjEifSx7InByaWNlIjoiNS4wIiwidGl0bGUiOiJHcmF1IiwidmFsdWUiOiJHcmF1IiwidW5pcXVlSWQiOjE2MTY2MDUxNTc1NjksImNvbmZpZ3VyYXRpb25fdmlzaWJsZSI6ZmFsc2UsImltYWdlX25hbWUiOiJtZWRpYVwvZG1nY29uZmlndXJhdG9yXC8wMlwvOWJcLzAwXC8xNjE2NjA1MTc3LUdyYXUucG5nIiwiaW1hZ2VfaGVpZ2h0IjoiNzAiLCJyZWF0YWx0ZWRfcHJpY2VfY29tcG9uZW50IjpudWxsLCJjb25maWd1cmF0aW9uX3Byb2NlbnR0eXBlIjoiMSJ9LHsicHJpY2UiOiI1LjAiLCJ0aXRsZSI6IkhlbGxncmF1IiwidmFsdWUiOiJIZWxsZ3JhdSIsInVuaXF1ZUlkIjoxNjE2NjA1MjcxNjg5LCJjb25maWd1cmF0aW9uX3Zpc2libGUiOmZhbHNlLCJpbWFnZV9uYW1lIjoibWVkaWFcL2RtZ2NvbmZpZ3VyYXRvclwvMzNcL2UwXC8xMFwvMTYxNjYwNTI3OS1IZWxsZ3JhdS5wbmciLCJpbWFnZV9oZWlnaHQiOiI3MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGwsImNvbmZpZ3VyYXRpb25fcHJvY2VudHR5cGUiOiIxIn0seyJwcmljZSI6IjUuMCIsInRpdGxlIjoiS2VybmFwZmVsIiwidmFsdWUiOiJLZXJuYXBmZWwiLCJ1bmlxdWVJZCI6MTYxNjg1MDg0NjE3NywiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcL2MxXC80YlwvMDRcLzE2MTY4NTA4ODMtS2VybmFwZmVsLnBuZyIsImltYWdlX2hlaWdodCI6IjcwIiwicmVhdGFsdGVkX3ByaWNlX2NvbXBvbmVudCI6bnVsbCwiY29uZmlndXJhdGlvbl9wcm9jZW50dHlwZSI6IjEifSx7InByaWNlIjoiNS4wIiwidGl0bGUiOiJLaXJzY2hlIEFjY28iLCJ2YWx1ZSI6IktpcnNjaGUgQWNjbyIsInVuaXF1ZUlkIjoxNjE3MzA5OTgxOTE3LCJjb25maWd1cmF0aW9uX3Zpc2libGUiOmZhbHNlLCJpbWFnZV9uYW1lIjoibWVkaWFcL2RtZ2NvbmZpZ3VyYXRvclwvZGRcLzVhXC8yNFwvMTYxNzMwOTk5OS1LaXJzY2hlIEFjY28ucG5nIiwiaW1hZ2VfaGVpZ2h0IjoiNzAiLCJyZWF0YWx0ZWRfcHJpY2VfY29tcG9uZW50IjpudWxsLCJjb25maWd1cmF0aW9uX3Byb2NlbnR0eXBlIjoiMSJ9LHsicHJpY2UiOiI1LjAiLCJ0aXRsZSI6IkxpbW9uZSIsInZhbHVlIjoiTGltb25lIiwidW5pcXVlSWQiOjE2MTY2MDUzMDgyMjYsImNvbmZpZ3VyYXRpb25fdmlzaWJsZSI6ZmFsc2UsImltYWdlX25hbWUiOiJtZWRpYVwvZG1nY29uZmlndXJhdG9yXC81YVwvYmJcL2IzXC8xNjE2NjA1MzE0LUxpbW9uZS5wbmciLCJpbWFnZV9oZWlnaHQiOiI3MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGwsImNvbmZpZ3VyYXRpb25fcHJvY2VudHR5cGUiOiIxIn0seyJwcmljZSI6IjUuMCIsInRpdGxlIjoiTGlwc3RpY2siLCJ2YWx1ZSI6IkxpcHN0aWNrIiwidW5pcXVlSWQiOjE2MTY2MDUzNTUxOTcsImNvbmZpZ3VyYXRpb25fdmlzaWJsZSI6ZmFsc2UsImltYWdlX25hbWUiOiJtZWRpYVwvZG1nY29uZmlndXJhdG9yXC80MFwvN2VcLzY1XC8xNjE2NjA1Mzc0LUxpcHN0aWNrLnBuZyIsImltYWdlX2hlaWdodCI6IjcwIiwicmVhdGFsdGVkX3ByaWNlX2NvbXBvbmVudCI6bnVsbCwiY29uZmlndXJhdGlvbl9wcm9jZW50dHlwZSI6IjEifSx7InByaWNlIjoiNS4wIiwidGl0bGUiOiJNYWhhZ29uaSIsInZhbHVlIjoiTWFoYWdvbmkiLCJ1bmlxdWVJZCI6MTYxNzMxMDA1ODU0MywiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcLzBlXC80M1wvMDNcLzE2MTczMTAwNzYtTWFoYWdvbmkucG5nIiwiaW1hZ2VfaGVpZ2h0IjoiNzAiLCJyZWF0YWx0ZWRfcHJpY2VfY29tcG9uZW50IjpudWxsLCJjb25maWd1cmF0aW9uX3Byb2NlbnR0eXBlIjoiMSJ9LHsicHJpY2UiOiI1LjAiLCJ0aXRsZSI6Ik11cm5hdSBBaG9ybiIsInZhbHVlIjoiTXVybmF1IEFob3JuIiwidW5pcXVlSWQiOjE2MTczMTAxNDUxMTUsImNvbmZpZ3VyYXRpb25fdmlzaWJsZSI6ZmFsc2UsImltYWdlX25hbWUiOiJtZWRpYVwvZG1nY29uZmlndXJhdG9yXC85MlwvODdcLzNjXC8xNjE3MzEwMTU4LU11cm5hdSBBaG9ybi5wbmciLCJpbWFnZV9oZWlnaHQiOiI3MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGwsImNvbmZpZ3VyYXRpb25fcHJvY2VudHR5cGUiOiIxIn0seyJwcmljZSI6IjUuMCIsInRpdGxlIjoiTmlhZ2FyYSBFaWNoZSBoZWxsIiwidmFsdWUiOiJOaWFnYXJhIEVpY2hlIGhlbGwiLCJ1bmlxdWVJZCI6MTYxNzMxMDE4OTk1MiwiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcLzc5XC9jZlwvYTZcLzE2MTczMTAyMDYtTmlhZ2FyYSBFaWNoZSBoZWxsLnBuZyIsImltYWdlX2hlaWdodCI6IjcwIiwicmVhdGFsdGVkX3ByaWNlX2NvbXBvbmVudCI6bnVsbCwiY29uZmlndXJhdGlvbl9wcm9jZW50dHlwZSI6IjEifSx7InByaWNlIjoiNS4wIiwidGl0bGUiOiJOdXNzYmF1bSIsInZhbHVlIjoiTnVzc2JhdW0iLCJ1bmlxdWVJZCI6MTYxNzMxMDU2NzgzOCwiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcLzhmXC80Y1wvYmJcLzE2MTczMTA1ODgtTnVzc2JhdW0ucG5nIiwiaW1hZ2VfaGVpZ2h0IjoiNzAiLCJyZWF0YWx0ZWRfcHJpY2VfY29tcG9uZW50IjpudWxsLCJjb25maWd1cmF0aW9uX3Byb2NlbnR0eXBlIjoiMSJ9LHsicHJpY2UiOiI1LjAiLCJ0aXRsZSI6Ik9ueXgiLCJ2YWx1ZSI6Ik9ueXgiLCJ1bmlxdWVJZCI6MTYxNzMxMDYyNTgyMSwiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcLzZiXC9lM1wvNjVcLzE2MTczMTA2NDAtT255eC5wbmciLCJpbWFnZV9oZWlnaHQiOiI3MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGwsImNvbmZpZ3VyYXRpb25fcHJvY2VudHR5cGUiOiIxIn0seyJwcmljZSI6IjUuMCIsInRpdGxlIjoiT3JhbmdlIiwidmFsdWUiOiJPcmFuZ2UiLCJ1bmlxdWVJZCI6MTYxNjYwNTQwMzIzNSwiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcLzIxXC82ZFwvNGZcLzE2MTY2MDU0MTItT3JhbmdlLnBuZyIsImltYWdlX2hlaWdodCI6IjcwIiwicmVhdGFsdGVkX3ByaWNlX2NvbXBvbmVudCI6bnVsbCwiY29uZmlndXJhdGlvbl9wcm9jZW50dHlwZSI6IjEifSx7InByaWNlIjoiNS4wIiwidGl0bGUiOiJSb3NlIiwidmFsdWUiOiJSb3NlIiwidW5pcXVlSWQiOjE2MTY2MDU0NDk2NzgsImNvbmZpZ3VyYXRpb25fdmlzaWJsZSI6ZmFsc2UsImltYWdlX25hbWUiOiJtZWRpYVwvZG1nY29uZmlndXJhdG9yXC9lNlwvMDNcLzVlXC8xNjE2NjA1NDU0LVJvc2UucG5nIiwiaW1hZ2VfaGVpZ2h0IjoiNzAiLCJyZWF0YWx0ZWRfcHJpY2VfY29tcG9uZW50IjpudWxsLCJjb25maWd1cmF0aW9uX3Byb2NlbnR0eXBlIjoiMSJ9LHsicHJpY2UiOiI1LjAiLCJ0aXRsZSI6IlJ1c3R5IElyb24iLCJ2YWx1ZSI6IlJ1c3R5IElyb24iLCJ1bmlxdWVJZCI6MTYxNjg1MDk1MDI1MSwiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcLzY2XC80N1wvOTFcLzE2MTY4NTA5ODktUnVzdHkgSXJvbi5wbmciLCJpbWFnZV9oZWlnaHQiOiI3MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGwsImNvbmZpZ3VyYXRpb25fcHJvY2VudHR5cGUiOiIxIn0seyJwcmljZSI6IjUuMCIsInRpdGxlIjoiU2FtZXJiZXJnYnVjaGUiLCJ2YWx1ZSI6IlNhbWVyYmVyZ2J1Y2hlIiwidW5pcXVlSWQiOjE2MTczMTA3NjUzMjMsImNvbmZpZ3VyYXRpb25fdmlzaWJsZSI6ZmFsc2UsImltYWdlX25hbWUiOiJtZWRpYVwvZG1nY29uZmlndXJhdG9yXC9kYlwvOTVcLzk3XC8xNjE3MzEwNzkwLVNhbWVyYmVyZ2J1Y2hlLnBuZyIsImltYWdlX2hlaWdodCI6IjcwIiwicmVhdGFsdGVkX3ByaWNlX2NvbXBvbmVudCI6bnVsbCwiY29uZmlndXJhdGlvbl9wcm9jZW50dHlwZSI6IjEifSx7InByaWNlIjoiNS4wIiwidGl0bGUiOiJTY2hpZWZlciIsInZhbHVlIjoiU2NoaWVmZXIiLCJ1bmlxdWVJZCI6MTYxNzMxMDg0OTQ0NiwiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcLzE1XC8yN1wvZjBcLzE2MTczMTA4OTctU2NoaWVmZXIucG5nIiwiaW1hZ2VfaGVpZ2h0IjoiNzAiLCJyZWF0YWx0ZWRfcHJpY2VfY29tcG9uZW50IjpudWxsLCJjb25maWd1cmF0aW9uX3Byb2NlbnR0eXBlIjoiMSJ9LHsicHJpY2UiOiI1LjAiLCJ0aXRsZSI6IlNjaHdhcnoiLCJ2YWx1ZSI6IlNjaHdhcnoiLCJ1bmlxdWVJZCI6MTYxNjYwNTQ4NTAwMywiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcLzdjXC9hZlwvMmNcLzE2MTY2MDU0OTgtU2Nod2Fyei5wbmciLCJpbWFnZV9oZWlnaHQiOiI3MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGwsImNvbmZpZ3VyYXRpb25fcHJvY2VudHR5cGUiOiIxIn0seyJwcmljZSI6IjUuMCIsInRpdGxlIjoiU2VhYmx1ZSIsInZhbHVlIjoiU2VhYmx1ZSIsInVuaXF1ZUlkIjoxNjE2NjA5MzUwMzY3LCJjb25maWd1cmF0aW9uX3Zpc2libGUiOmZhbHNlLCJpbWFnZV9uYW1lIjoibWVkaWFcL2RtZ2NvbmZpZ3VyYXRvclwvNDJcL2FjXC9hYlwvMTYxNjYwOTM2Ni1TZWFibHVlLnBuZyIsImltYWdlX2hlaWdodCI6IjcwIiwicmVhdGFsdGVkX3ByaWNlX2NvbXBvbmVudCI6bnVsbCwiY29uZmlndXJhdGlvbl9wcm9jZW50dHlwZSI6IjEifSx7InByaWNlIjoiNS4wIiwidGl0bGUiOiJTaWxiZXIiLCJ2YWx1ZSI6IlNpbGJlciIsInVuaXF1ZUlkIjoxNjE2NjA5NDA1ODYzLCJjb25maWd1cmF0aW9uX3Zpc2libGUiOmZhbHNlLCJpbWFnZV9uYW1lIjoibWVkaWFcL2RtZ2NvbmZpZ3VyYXRvclwvMTZcL2M4XC84MlwvMTYxNjYwOTQxNC1TaWxiZXIucG5nIiwiaW1hZ2VfaGVpZ2h0IjoiNzAiLCJyZWF0YWx0ZWRfcHJpY2VfY29tcG9uZW50IjpudWxsLCJjb25maWd1cmF0aW9uX3Byb2NlbnR0eXBlIjoiMSJ9LHsicHJpY2UiOiI1LjAiLCJ0aXRsZSI6IlNvbm9tYSBFaWNoZSIsInZhbHVlIjoiU29ub21hIEVpY2hlIiwidW5pcXVlSWQiOjE2MTY2MDk3NTk2NTgsImNvbmZpZ3VyYXRpb25fdmlzaWJsZSI6ZmFsc2UsImltYWdlX25hbWUiOiJtZWRpYVwvZG1nY29uZmlndXJhdG9yXC9lOVwvMTRcL2I2XC8xNjE2NjA5NzY3LVNvbm9tYSBFaWNoZS5wbmciLCJpbWFnZV9oZWlnaHQiOiI3MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGwsImNvbmZpZ3VyYXRpb25fcHJvY2VudHR5cGUiOiIxIn0seyJwcmljZSI6IjUuMCIsInRpdGxlIjoiVGF1YmVuYmxhdSIsInZhbHVlIjoiVGF1YmVuYmxhdSIsInVuaXF1ZUlkIjoxNjE2NjA5Nzk2Mzk0LCJjb25maWd1cmF0aW9uX3Zpc2libGUiOmZhbHNlLCJpbWFnZV9uYW1lIjoibWVkaWFcL2RtZ2NvbmZpZ3VyYXRvclwvNzZcL2RkXC8zM1wvMTYxNjYwOTgwOS1UYXViZW5ibGF1LnBuZyIsImltYWdlX2hlaWdodCI6IjcwIiwicmVhdGFsdGVkX3ByaWNlX2NvbXBvbmVudCI6bnVsbCwiY29uZmlndXJhdGlvbl9wcm9jZW50dHlwZSI6IjEifSx7InByaWNlIjoiNS4wIiwidGl0bGUiOiJUXHUwMGZjcmtpcyIsInZhbHVlIjoiVFx1MDBmY3JraXMiLCJ1bmlxdWVJZCI6MTYxNjYwOTgzNzEzMCwiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcLzE3XC84Y1wvYzlcLzE2MTg1MTg5MzctVHVlcmtpcy5wbmciLCJpbWFnZV9oZWlnaHQiOiI3MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGwsImNvbmZpZ3VyYXRpb25fcHJvY2VudHR5cGUiOiIxIn0seyJwcmljZSI6IjUuMCIsInRpdGxlIjoiV2FsbnVzcyBWZW5lZGlnIiwidmFsdWUiOiJXYWxudXNzIFZlbmVkaWciLCJ1bmlxdWVJZCI6MTYxNzMxMTA3OTIyMSwiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcLzA1XC9mN1wvOGVcLzE2MTczMTEwOTItV2FsbnVzcyBWZW5lZGlnLnBuZyIsImltYWdlX2hlaWdodCI6IjcwIiwicmVhdGFsdGVkX3ByaWNlX2NvbXBvbmVudCI6bnVsbCwiY29uZmlndXJhdGlvbl9wcm9jZW50dHlwZSI6IjEifSx7InByaWNlIjoiNS4wIiwidGl0bGUiOiJXZWlzcyIsInZhbHVlIjoiV2Vpc3MiLCJ1bmlxdWVJZCI6MTYxNjYwOTg3MjMxNiwiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcLzBmXC8xYlwvNTNcLzE2MTY2MDk4NzctV2VpXHUwMGRmLnBuZyIsImltYWdlX2hlaWdodCI6IjcwIiwicmVhdGFsdGVkX3ByaWNlX2NvbXBvbmVudCI6bnVsbCwiY29uZmlndXJhdGlvbl9wcm9jZW50dHlwZSI6IjEifSx7InByaWNlIjoiNS4wIiwidGl0bGUiOiJXZW5nZSIsInZhbHVlIjoiV2VuZ2UiLCJ1bmlxdWVJZCI6MTYxNzMxMTEzMTE2OSwiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcL2I4XC8wMFwvNjJcLzE2MTczMTExNDYtV2VuZ2UucG5nIiwiaW1hZ2VfaGVpZ2h0IjoiNzAiLCJyZWF0YWx0ZWRfcHJpY2VfY29tcG9uZW50IjpudWxsLCJjb25maWd1cmF0aW9uX3Byb2NlbnR0eXBlIjoiMSJ9LHsicHJpY2UiOiI1LjAiLCJ0aXRsZSI6IlplYnJhbm8iLCJ2YWx1ZSI6IlplYnJhbm8iLCJ1bmlxdWVJZCI6MTYxNzMxMTE4MTY1MywiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcLzIzXC83ZFwvOTlcLzE2MTczMTExOTMtWmVicmFuby5wbmciLCJpbWFnZV9oZWlnaHQiOiI3MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGwsImNvbmZpZ3VyYXRpb25fcHJvY2VudHR5cGUiOiIxIn0seyJwcmljZSI6IjUuMCIsInRpdGxlIjoiTWFybW9yIFdlaXNzIiwibWluIjoiIiwibWF4IjoiIiwidmFsdWUiOiJNYXJtb3IgV2Vpc3MiLCJ1bmlxdWVJZCI6MTcwNTkzODU0Mzk3NSwiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcL2FhXC82NFwvMjhcLzE3MDU5Mzg4NTMtTWFybW9yIFdlaXNzLnBuZyIsImltYWdlX2hlaWdodCI6IjcwIiwicmVhdGFsdGVkX3ByaWNlX2NvbXBvbmVudCI6bnVsbH0seyJwcmljZSI6IjUuMCIsInRpdGxlIjoiTWFybW9yIER1bmtlbCBHcmF1IiwibWluIjoiIiwibWF4IjoiIiwidmFsdWUiOiJNYXJtb3IgRHVua2VsIEdyYXUiLCJ1bmlxdWVJZCI6MTcwNTk0MDg4NDAzNSwiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcLzBlXC85MFwvODZcLzE3MDU5NDExOTktTWFybW9yIGR1bmtlbCBncmF1IEthbnRlLnBuZyIsImltYWdlX2hlaWdodCI6IjcwIiwicmVhdGFsdGVkX3ByaWNlX2NvbXBvbmVudCI6bnVsbH0seyJwcmljZSI6IjUuMCIsInRpdGxlIjoiTWFybW9yIEhlbGwgR3JhdSIsIm1pbiI6IiIsIm1heCI6IiIsInZhbHVlIjoiTWFybW9yIEhlbGwgR3JhdSIsInVuaXF1ZUlkIjoxNzA1OTQwOTIzODc2LCJjb25maWd1cmF0aW9uX3Zpc2libGUiOmZhbHNlLCJpbWFnZV9uYW1lIjoibWVkaWFcL2RtZ2NvbmZpZ3VyYXRvclwvNGJcL2JmXC84OVwvMTcwNTk0MTE2Ni1NYXJtb3IgaGVsbCBncmF1IEthbnRlLnBuZyIsImltYWdlX2hlaWdodCI6IjcwIiwicmVhdGFsdGVkX3ByaWNlX2NvbXBvbmVudCI6bnVsbH0seyJwcmljZSI6IjUuMCIsInRpdGxlIjoiU2Nod2FyeiBGZWlucG9yZSBNYXR0IiwibWluIjoiIiwibWF4IjoiIiwidmFsdWUiOiJTY2h3YXJ6IEZlaW5wb3JlIE1hdHQiLCJ1bmlxdWVJZCI6MTcwNTk0MDkyMzg2MiwiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcL1wvYmNcL2VlXC9mMFwvMTYxNjg1MTEwMC1TY2h3YXJ6IEZlaW5wb3JlIE1hdHQucG5nIiwiaW1hZ2VfaGVpZ2h0IjoiNzAiLCJyZWF0YWx0ZWRfcHJpY2VfY29tcG9uZW50IjpudWxsfSx7InByaWNlIjoiNS4wIiwidGl0bGUiOiJTd2lzcyBFbG0gS2FsdCIsIm1pbiI6IiIsIm1heCI6IiIsInZhbHVlIjoiU3dpc3MgRWxtIEthbHQiLCJ1bmlxdWVJZCI6MTcwNTk0MDkyMzg0MSwiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcL1wvMTdcL2Q4XC8zY1wvMTYxNzMxMTAzNi1Td2lzcyBFbG0ga2FsdC5wbmciLCJpbWFnZV9oZWlnaHQiOiI3MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGx9XQ==';
+                      //let dataSelectDB = 'W3sicHJpY2UiOiIwLjAiLCJ0aXRsZSI6IlNjaG5pdHRrYW50ZSIsIm1pbiI6IiIsIm1heCI6IiIsInZhbHVlIjoiU2Nobml0dGthbnRlIiwidW5pcXVlSWQiOjE2MzYyMTE4NjU0OTIsImNvbmZpZ3VyYXRpb25fdmlzaWJsZSI6ZmFsc2UsImltYWdlX25hbWUiOiJtZWRpYVwvZG1nY29uZmlndXJhdG9yXC9lN1wvNGVcLzFhXC8xNzI1ODY4OTMwLVNjaG5pdHRrYW50ZS5wbmciLCJpbWFnZV9oZWlnaHQiOiI4MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGwsImNvbmZpZ3VyYXRpb25fcHJvY2VudHR5cGUiOiIxIn0seyJwcmljZSI6IjIuOSIsInRpdGxlIjoiUG9saWVydCIsIm1pbiI6IiIsIm1heCI6IiIsInZhbHVlIjoiUG9saWVydCIsInVuaXF1ZUlkIjoxNjM2MjExOTIzNDA3LCJjb25maWd1cmF0aW9uX3Zpc2libGUiOmZhbHNlLCJpbWFnZV9uYW1lIjoibWVkaWFcL2RtZ2NvbmZpZ3VyYXRvclwvN2VcL2M3XC9mM1wvMTcyNTg2ODkxMS1Qb2xpZXJ0ZS5wbmciLCJpbWFnZV9oZWlnaHQiOiI4MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGwsImNvbmZpZ3VyYXRpb25fcHJvY2VudHR5cGUiOiIxIn0seyJwcmljZSI6IjEwLjgwIiwidGl0bGUiOiIxMCBtbSBGYWNldHRlbnNjaGxpZmYiLCJtaW4iOiIiLCJtYXgiOiIiLCJ2YWx1ZSI6IjEwIG1tIEZhY2V0dGVuc2NobGlmZiIsInVuaXF1ZUlkIjoxNzI2MDQxMDQ4NTEwLCJjb25maWd1cmF0aW9uX3Zpc2libGUiOmZhbHNlLCJpbWFnZV9uYW1lIjoibWVkaWFcL2RtZ2NvbmZpZ3VyYXRvclwvNmZcL2RiXC8wN1wvMTcyNjA0MTM2NS1GYWNldHRlbnNjaGxpZmYucG5nIiwiaW1hZ2VfaGVpZ2h0IjoiODAiLCJyZWF0YWx0ZWRfcHJpY2VfY29tcG9uZW50IjpudWxsfSx7InByaWNlIjoiMTIuMDAiLCJ0aXRsZSI6IjE1IG1tIEZhY2V0dGVuc2NobGlmZiIsIm1pbiI6IiIsIm1heCI6IiIsInZhbHVlIjoiMTUgbW0gRmFjZXR0ZW5zY2hsaWZmIiwidW5pcXVlSWQiOjE3MjYwNDEwNjk5MjMsImNvbmZpZ3VyYXRpb25fdmlzaWJsZSI6ZmFsc2UsImltYWdlX25hbWUiOiJtZWRpYVwvZG1nY29uZmlndXJhdG9yXC8yMFwvZTFcLzhmXC8xNzI2MDQxMzgwLUZhY2V0dGVuc2NobGlmZi5wbmciLCJpbWFnZV9oZWlnaHQiOiI4MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGx9LHsicHJpY2UiOiIxMy41MCIsInRpdGxlIjoiMjAgbW0gRmFjZXR0ZW5zY2hsaWZmIiwibWluIjoiIiwibWF4IjoiIiwidmFsdWUiOiIyMCBtbSBGYWNldHRlbnNjaGxpZmYiLCJ1bmlxdWVJZCI6MTcyNjA0MTA5MzM5NSwiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcLzcxXC8yMVwvMzlcLzE3MjYwNDEzOTMtRmFjZXR0ZW5zY2hsaWZmLnBuZyIsImltYWdlX2hlaWdodCI6IjgwIiwicmVhdGFsdGVkX3ByaWNlX2NvbXBvbmVudCI6bnVsbH0seyJwcmljZSI6IjE1LjIwIiwidGl0bGUiOiIyNSBtbSBGYWNldHRlbnNjaGxpZmYiLCJtaW4iOiIiLCJtYXgiOiIiLCJ2YWx1ZSI6IjI1IG1tIEZhY2V0dGVuc2NobGlmZiIsInVuaXF1ZUlkIjoxNzI2MDQxMTE0Njg2LCJjb25maWd1cmF0aW9uX3Zpc2libGUiOmZhbHNlLCJpbWFnZV9uYW1lIjoibWVkaWFcL2RtZ2NvbmZpZ3VyYXRvclwvOTlcLzhmXC9mMFwvMTcyNjA0MTQxMC1GYWNldHRlbnNjaGxpZmYucG5nIiwiaW1hZ2VfaGVpZ2h0IjoiODAiLCJyZWF0YWx0ZWRfcHJpY2VfY29tcG9uZW50IjpudWxsfSx7InByaWNlIjoiMjIuMDAiLCJ0aXRsZSI6IjMwIG1tIEZhY2V0dGVuc2NobGlmZiIsIm1pbiI6IiIsIm1heCI6IiIsInZhbHVlIjoiMzAgbW0gRmFjZXR0ZW5zY2hsaWZmIiwidW5pcXVlSWQiOjE3MjYwNDExMzYwOTUsImNvbmZpZ3VyYXRpb25fdmlzaWJsZSI6ZmFsc2UsImltYWdlX25hbWUiOiJtZWRpYVwvZG1nY29uZmlndXJhdG9yXC8wNFwvZTZcLzE0XC8xNzI2MDQxNDIzLUZhY2V0dGVuc2NobGlmZi5wbmciLCJpbWFnZV9oZWlnaHQiOiI4MCIsInJlYXRhbHRlZF9wcmljZV9jb21wb25lbnQiOm51bGx9LHsicHJpY2UiOiIyOS4wMCIsInRpdGxlIjoiNDAgbW0gRmFjZXR0ZW5zY2hsaWZmIiwibWluIjoiIiwibWF4IjoiIiwidmFsdWUiOiI0MCBtbSBGYWNldHRlbnNjaGxpZmYiLCJ1bmlxdWVJZCI6MTcyNjA0MTE1MDIwNSwiY29uZmlndXJhdGlvbl92aXNpYmxlIjpmYWxzZSwiaW1hZ2VfbmFtZSI6Im1lZGlhXC9kbWdjb25maWd1cmF0b3JcLzZhXC9hYVwvNjBcLzE3MjYwNDE0MzEtRmFjZXR0ZW5zY2hsaWZmLnBuZyIsImltYWdlX2hlaWdodCI6IjgwIiwicmVhdGFsdGVkX3ByaWNlX2NvbXBvbmVudCI6bnVsbH1d';
                       let selectBocDecodedString = JSON.parse(self.decode(dataSelectDB));
 
                       //let selectBocDecodedString = JSON.parse('');
-                      //console.log(self.decode(dataSelectDB));
+                     // console.log(dataSelectDB);
                       self.propertiesValue[self.currentSelectedProperty].additionalData = selectBocDecodedString;
                       self.selectBoxData = selectBocDecodedString;
                       self.selectBoxDataBuffer= selectBocDecodedString;
@@ -2957,6 +3038,11 @@
                       Object.entries(self.selectBoxData).forEach(([key, propertyObj]) => {
                         //let alreadyExists = self.alreadyInList(propertyObj.title, self.standardValues);
                         //if(! alreadyExists) {
+                        //let checkIdAreadyExists = self.checkedRows.find(item => item.id == propertyObj.uniqueId);
+                        //if(!checkIdAreadyExists) {
+                          self.checkedRows.push(false)
+                        //}
+
                         self.standardValues.push({text: propertyObj.title, value: propertyObj.value});
                         // }
 
@@ -3034,8 +3120,10 @@
                     self.svgContent = self.propertiesValue[self.currentSelectedProperty].svg;
                     self.isHidden = parseInt(self.propertiesValue[self.currentSelectedProperty].hidden);
                     self.withZoom = parseInt(self.propertiesValue[self.currentSelectedProperty].zoom);
+                    self.withLegend = parseInt(self.propertiesValue[self.currentSelectedProperty].withLegend);
                     self.dmgIsbasicPrice = self.propertiesValue[self.currentSelectedProperty].dmgIsbasicPrice;
                     self.unitValue = self.propertiesValue[self.currentSelectedProperty].unitValue;
+                    self.displayedUnitValue = self.propertiesValue[self.currentSelectedProperty].displayedUnitValue;
                     self.valueCssClass = self.propertiesValue[self.currentSelectedProperty].cssClass;
                     self.valueBreite = self.propertiesValue[self.currentSelectedProperty].valueWidth;
                     self.valueHoehe = self.propertiesValue[self.currentSelectedProperty].valueHeight;
@@ -3435,11 +3523,19 @@
       },
       savePropertyValue(selectedProperty) {
         let propertyInformation = this.$refs.propertyInformation.$el.querySelector('.mdb-wysiwyg-textarea').innerHTML;
-        let propertyAdditionalInformation = this.$refs.propertyAdditionalInformation.$el.querySelector('.mdb-wysiwyg-textarea').innerHTML;
-        if(this.uniqueId == ''){
-          this.uniqueId =  Date.now();
+        if(propertyInformation.trim() == "<br>"){
+          propertyInformation = '';
         }
 
+        let propertyAdditionalInformation = this.$refs.propertyAdditionalInformation.$el.querySelector('.mdb-wysiwyg-textarea').innerHTML;
+        if(propertyAdditionalInformation.trim() == "<br>"){
+          propertyAdditionalInformation = '';
+        }
+
+        if(this.uniqueId == '') {
+          this.uniqueId =  Date.now();
+        }
+        //console.log("KOKOKO");
         let self = this;
         // var selectedGroupKey = selectedGroup.toLowerCase().replace(/\s/g, '').replace(/[^a-zA-Z0-9]/g, '');
         if(this.matrixCollection == undefined) {
@@ -3450,14 +3546,14 @@
         this.currentSelectedProperty = selectedProperty;
 
         //console.log("OPOPOP::"+JSON.stringify(this.selectBoxData));
-        //this.selectBoxData = JSON.parse('[{"price":"0","title":"Ohne","value":"Ohne","uniqueId":1615556030901,"configuration_visible":false,"image_name":"media/dmgconfigurator/34/91/7b/1615648954-ohne1.png","image_width":"70","image_height":"70","reatalted_price_component":null,"procenttype":"Prozentig"},{"price":"5.0","title":"Weiß Hochglanz","min":"","max":"","value":"Weiß Hochglanz","uniqueId":1639085736263,"configuration_visible":false,"image_name":"media/dmgconfigurator/40/8c/89/1639085785-Weiß Hochglanz.png","image_width":"","image_height":"70","reatalted_price_component":null},{"price":"5.0","title":"Schwarz Hochglanz","min":"","max":"","value":"Schwarz Hochglanz","uniqueId":1662629378936,"configuration_visible":false,"image_name":"media/dmgconfigurator/12/56/5c/1662629458-PKSchwarzHochglanz.png","image_width":"70","image_height":"70","reatalted_price_component":null},{"price":"5.0","title":"Rot Hochglanz","min":"","max":"","value":"Rot Hochglanz","uniqueId":1662629602569,"configuration_visible":false,"image_name":"media/dmgconfigurator/b1/8d/ee/1662629623-PKRotHochglanz.png","image_width":"70","image_height":"70","reatalted_price_component":null},{"price":"5.0","title":"Schiefergrau Hochglanz","min":"","max":"","value":"Schiefergrau Hochglanz","uniqueId":1662629713578,"configuration_visible":false,"image_name":"media/dmgconfigurator/8b/39/7a/1662629811-KSchiefergrauHochglanz.png","image_width":"70","image_height":"70","reatalted_price_component":null},{"price":"5.0","title":"Ahorn Natur","value":"Ahorn Natur","uniqueId":1617309319767,"configuration_visible":false,"image_name":"media/dmgconfigurator/cc/65/89/1617309343-Ahorn Natur.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Alu Geschliffen","value":"Alu Geschliffen","uniqueId":1617309397349,"configuration_visible":false,"image_name":"media/dmgconfigurator/f0/f2/4d/1617309414-Alu geschliffen.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Anthrazit","value":"Anthrazit","uniqueId":1613128087353,"configuration_visible":false,"image_name":"media/dmgconfigurator/19/c2/26/1616592402-Anthrazit.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Atollblau","value":"Atollblau","uniqueId":1613127904250,"configuration_visible":false,"image_name":"media/dmgconfigurator/93/f8/4b/1616848691-Atollblau.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Beige","value":"Beige","uniqueId":1613127928936,"configuration_visible":false,"image_name":"media/dmgconfigurator/a8/35/42/1616592516-Beige.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Beton dunkel","value":"Beton dunkel","uniqueId":1616849077093,"configuration_visible":false,"image_name":"media/dmgconfigurator/4a/d5/7f/1616849105-Beton dunkel.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Beton hell","value":"Beton hell","uniqueId":1616848943477,"configuration_visible":false,"image_name":"media/dmgconfigurator/b6/07/b1/1616848997-Beton hell.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Braun","value":"Braun","uniqueId":1613128002213,"configuration_visible":false,"image_name":"media/dmgconfigurator/42/31/f2/1616592587-Braun.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Canyon White","value":"Canyon White","uniqueId":1616849306906,"configuration_visible":false,"image_name":"media/dmgconfigurator/f3/57/55/1616849432-Canyon White.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Eiche Salzburg","value":"Eiche Salzburg","uniqueId":1617309606813,"configuration_visible":false,"image_name":"media/dmgconfigurator/7a/18/33/1617309633-Eiche Salzburg.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Eiche Sanremo Tabacco","value":"Eiche Sanremo Tabacco","uniqueId":1613128061274,"configuration_visible":false,"image_name":"media/dmgconfigurator/7a/6f/f0/1616592614-Eiche Sanremo Tabacco.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Eierschale","value":"Eierschale","uniqueId":1613128129247,"configuration_visible":false,"image_name":"media/dmgconfigurator/06/eb/b2/1616592640-Eierschale.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Esche Taormina Vogue","value":"Esche Taormina Vogue","uniqueId":1617309686811,"configuration_visible":false,"image_name":"media/dmgconfigurator/03/59/87/1617309714-Esche Taormina Vogue.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Gelb","value":"Gelb","uniqueId":1616605063247,"configuration_visible":false,"image_name":"media/dmgconfigurator/6f/8a/00/1616605105-Gelb.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Grau","value":"Grau","uniqueId":1616605157569,"configuration_visible":false,"image_name":"media/dmgconfigurator/02/9b/00/1616605177-Grau.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Green Apple","value":"Green Apple","uniqueId":1616605237044,"configuration_visible":false,"image_name":"media/dmgconfigurator/dd/d9/0a/1616605242-Green Apple.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Hellgrau","value":"Hellgrau","uniqueId":1616605271689,"configuration_visible":false,"image_name":"media/dmgconfigurator/33/e0/10/1616605279-Hellgrau.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Kernapfel","value":"Kernapfel","uniqueId":1616850846177,"configuration_visible":false,"image_name":"media/dmgconfigurator/c1/4b/04/1616850883-Kernapfel.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Kirsche Acco","value":"Kirsche Acco","uniqueId":1617309981917,"configuration_visible":false,"image_name":"media/dmgconfigurator/dd/5a/24/1617309999-Kirsche Acco.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Limone","value":"Limone","uniqueId":1616605308226,"configuration_visible":false,"image_name":"media/dmgconfigurator/5a/bb/b3/1616605314-Limone.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Lipstick","value":"Lipstick","uniqueId":1616605355197,"configuration_visible":false,"image_name":"media/dmgconfigurator/40/7e/65/1616605374-Lipstick.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Mahagoni","value":"Mahagoni","uniqueId":1617310058543,"configuration_visible":false,"image_name":"media/dmgconfigurator/0e/43/03/1617310076-Mahagoni.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Murnau Ahorn","value":"Murnau Ahorn","uniqueId":1617310145115,"configuration_visible":false,"image_name":"media/dmgconfigurator/92/87/3c/1617310158-Murnau Ahorn.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Niagara Eiche hell","value":"Niagara Eiche hell","uniqueId":1617310189952,"configuration_visible":false,"image_name":"media/dmgconfigurator/79/cf/a6/1617310206-Niagara Eiche hell.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Nussbaum","value":"Nussbaum","uniqueId":1617310567838,"configuration_visible":false,"image_name":"media/dmgconfigurator/8f/4c/bb/1617310588-Nussbaum.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Onyx","value":"Onyx","uniqueId":1617310625821,"configuration_visible":false,"image_name":"media/dmgconfigurator/6b/e3/65/1617310640-Onyx.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Orange","value":"Orange","uniqueId":1616605403235,"configuration_visible":false,"image_name":"media/dmgconfigurator/21/6d/4f/1616605412-Orange.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Rose","value":"Rose","uniqueId":1616605449678,"configuration_visible":false,"image_name":"media/dmgconfigurator/e6/03/5e/1616605454-Rose.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Rusty Iron","value":"Rusty Iron","uniqueId":1616850950251,"configuration_visible":false,"image_name":"media/dmgconfigurator/66/47/91/1616850989-Rusty Iron.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Samerbergbuche","value":"Samerbergbuche","uniqueId":1617310765323,"configuration_visible":false,"image_name":"media/dmgconfigurator/db/95/97/1617310790-Samerbergbuche.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Schiefer","value":"Schiefer","uniqueId":1617310849446,"configuration_visible":false,"image_name":"media/dmgconfigurator/15/27/f0/1617310897-Schiefer.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Schwarz","value":"Schwarz","uniqueId":1616605485003,"configuration_visible":false,"image_name":"media/dmgconfigurator/7c/af/2c/1616605498-Schwarz.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Schwarz Feinpore Matt","value":"Schwarz Feinpore Matt","uniqueId":1616851043391,"configuration_visible":false,"image_name":"media/dmgconfigurator/bc/ee/f0/1616851100-Schwarz Feinpore Matt.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Seablue","value":"Seablue","uniqueId":1616609350367,"configuration_visible":false,"image_name":"media/dmgconfigurator/42/ac/ab/1616609366-Seablue.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Silber","value":"Silber","uniqueId":1616609405863,"configuration_visible":false,"image_name":"media/dmgconfigurator/16/c8/82/1616609414-Silber.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Skyblue","value":"Skyblue","uniqueId":1616609446418,"configuration_visible":false,"image_name":"media/dmgconfigurator/00/48/d4/1616609452-Skyblue.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Smaragdgruen","value":"Smaragdgruen","uniqueId":1616609488407,"configuration_visible":false,"image_name":"media/dmgconfigurator/9c/4d/91/1618519014-Smaragdgruen.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Sonoma Eiche","value":"Sonoma Eiche","uniqueId":1616609759658,"configuration_visible":false,"image_name":"media/dmgconfigurator/e9/14/b6/1616609767-Sonoma Eiche.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Swiss Elm kalt","value":"Swiss Elm kalt","uniqueId":1617311018770,"configuration_visible":false,"image_name":"media/dmgconfigurator/17/d8/3c/1617311036-Swiss Elm kalt.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Taubenblau","value":"Taubenblau","uniqueId":1616609796394,"configuration_visible":false,"image_name":"media/dmgconfigurator/76/dd/33/1616609809-Taubenblau.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Türkis","value":"Türkis","uniqueId":1616609837130,"configuration_visible":false,"image_name":"media/dmgconfigurator/17/8c/c9/1618518937-Tuerkis.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Walnuss Venedig","value":"Walnuss Venedig","uniqueId":1617311079221,"configuration_visible":false,"image_name":"media/dmgconfigurator/05/f7/8e/1617311092-Walnuss Venedig.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Weiss","value":"Weiss","uniqueId":1616609872316,"configuration_visible":false,"image_name":"media/dmgconfigurator/0f/1b/53/1616609877-Weiß.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Wenge","value":"Wenge","uniqueId":1617311131169,"configuration_visible":false,"image_name":"media/dmgconfigurator/b8/00/62/1617311146-Wenge.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"5.0","title":"Zebrano","value":"Zebrano","uniqueId":1617311181653,"configuration_visible":false,"image_name":"media/dmgconfigurator/23/7d/99/1617311193-Zebrano.png","image_height":"70","reatalted_price_component":null,"configuration_procenttype":"1"}]');
+        //this.selectBoxData = JSON.parse('[{"price":"0.0","title":"Schnittkante","min":"","max":"","value":"Schnittkante","uniqueId":1636211865492,"configuration_visible":false,"image_name":"media/dmgconfigurator/e7/4e/1a/1725868930-Schnittkante.png","image_height":"80","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"2.9","title":"Matt Geschliffen","min":"","max":"","value":"Matt Geschliffen","uniqueId":1636211923217,"configuration_visible":false,"image_name":"media/dmgconfigurator/7e/c7/f3/1725868911-Polierte.png","image_height":"80","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"2.9","title":"Poliert Hochglanz","min":"","max":"","value":"Poliert Hochglanz","uniqueId":1636211923347,"configuration_visible":false,"image_name":"media/dmgconfigurator/7e/c7/f3/1725868911-Polierte.png","image_height":"80","reatalted_price_component":null,"configuration_procenttype":"1"},{"price":"10.80","title":"Facettenschliff","min":"","max":"","value":"Facettenschliff","uniqueId":1726041048270,"configuration_visible":false,"image_name":"media/dmgconfigurator/6f/db/07/1726041365-Facettenschliff.png","image_height":"80","reatalted_price_component":null},{"price":"12.00","title":"10 mm Facettenschliff","min":"","max":"","value":"10 mm Facettenschliff","uniqueId":1726041060123,"configuration_visible":false,"image_name":"media/dmgconfigurator/20/e1/8f/1726041380-Facettenschliff.png","image_height":"80","reatalted_price_component":null},{"price":"10.80","title":"10 mm Steilfacette","min":"","max":"","value":"10 mm Steilfacette","uniqueId":1726041043510,"configuration_visible":false,"image_name":"media/dmgconfigurator/6f/db/07/1726041365-Facettenschliff.png","image_height":"80","reatalted_price_component":null},{"price":"12.00","title":"15 mm Facettenschliff","min":"","max":"","value":"15 mm Facettenschliff","uniqueId":1726041069923,"configuration_visible":false,"image_name":"media/dmgconfigurator/20/e1/8f/1726041380-Facettenschliff.png","image_height":"80","reatalted_price_component":null},{"price":"13.50","title":"20 mm Facettenschliff","min":"","max":"","value":"20 mm Facettenschliff","uniqueId":1726041093395,"configuration_visible":false,"image_name":"media/dmgconfigurator/71/21/39/1726041393-Facettenschliff.png","image_height":"80","reatalted_price_component":null},{"price":"15.20","title":"25 mm Facettenschliff","min":"","max":"","value":"25 mm Facettenschliff","uniqueId":1726041114686,"configuration_visible":false,"image_name":"media/dmgconfigurator/99/8f/f0/1726041410-Facettenschliff.png","image_height":"80","reatalted_price_component":null},{"price":"22.00","title":"30 mm Facettenschliff","min":"","max":"","value":"30 mm Facettenschliff","uniqueId":1726041136095,"configuration_visible":false,"image_name":"media/dmgconfigurator/04/e6/14/1726041423-Facettenschliff.png","image_height":"80","reatalted_price_component":null},{"price":"29.00","title":"40 mm Facettenschliff","min":"","max":"","value":"40 mm Facettenschliff","uniqueId":1726041150205,"configuration_visible":false,"image_name":"media/dmgconfigurator/6a/aa/60/1726041431-Facettenschliff.png","image_height":"80","reatalted_price_component":null}]');
 
         let multiplyFieldsLocal = this.encode(JSON.stringify(this.multiplyFields));
         let relatedMultiplyFieldsLocal = this.encode(JSON.stringify(this.relatedMultiplyFields));
         let propertyValueItem = {uniqueId: this.uniqueId, fieldId: this.fieldId, titel: this.fieldTitel, expression: this.expression, imageUploadName: this.templateImage, position: this.fieldPosition, valueCssClass: this.valueCssClass, maxValue: this.maxValue, minValue: this.minValue, multiplyFields:  multiplyFieldsLocal,
-          chooseValueForMatrix: this.chooseValueForMatrix, matrixOperatorX : this.matrixOperatorX, matrixOperatorY: this.matrixOperatorY, propertyInformation: propertyInformation, relations: this.matrixAttachedToProperty, unitValue: this.unitValue, propertyToImageBox: this.propertyToImageBox,
+          chooseValueForMatrix: this.chooseValueForMatrix, matrixOperatorX : this.matrixOperatorX, matrixOperatorY: this.matrixOperatorY, propertyInformation: propertyInformation, relations: this.matrixAttachedToProperty, unitValue: this.unitValue, displayedUnitValue: this.displayedUnitValue, propertyToImageBox: this.propertyToImageBox,
           propertyAdditionalInformation: propertyAdditionalInformation, standardValue: this.standardValue, valueBreite: this.valueBreite, valueHoehe: this.valueHoehe, valuePosX: this.valuePosX, valuePosY: this.valuePosY, imgWidth: this.imgWidth, imgHeight: this.imgHeight, relatedMultiplyFields: relatedMultiplyFieldsLocal,
-          operatorCombi: this.operatorCombi, dataTyp : this.data_type, mandatory_field: this.requiredField, fieldActive: this.activeField, fieldValue: this.fieldValue, price: this.fieldPriceValue, matrix: this.matrixCollection, additionalData: this.selectBoxData, isDigit: this.isDigit, svg: this.svgContent, hidden: this.isHidden, zoom: this.withZoom, dmgIsbasicPrice: this.dmgIsbasicPrice};
+          operatorCombi: this.operatorCombi, dataTyp : this.data_type, mandatory_field: this.requiredField, fieldActive: this.activeField, fieldValue: this.fieldValue, price: this.fieldPriceValue, matrix: this.matrixCollection, additionalData: this.selectBoxData, isDigit: this.isDigit, svg: this.svgContent, hidden: this.isHidden, zoom: this.withZoom, withLegend: this.withLegend, dmgIsbasicPrice: this.dmgIsbasicPrice};
 
         var encodedPropertyValueRecord = this.encode(JSON.stringify(propertyValueItem));
         var encodedSelectedProperty =  this.encode(this.currentSelectedProperty);
@@ -3506,7 +3602,9 @@
         this.svgContent = '';
         this.isHidden = 0;
         this.withZoom = 0;
+        this.withLegend = 0;
         this.unitValue = '';
+        this.displayedUnitValue = '';
         this.matrixOperatorX = '';
         this.matrixOperatorY = '';
         this.propertyInformation = '';
@@ -3997,5 +4095,12 @@
 
   .input-group>.custom-file, .input-group>.custom-select, .input-group>.form-control, .input-group>.form-control-plaintext {
     width: 100% !important;
+  }
+
+  .table-striped input[type="checkbox"]:not(:checked),
+  .table-striped input[type="checkbox"]:checked {
+    position: static;
+    opacity: 1;
+    pointer-events: auto;
   }
 </style>
