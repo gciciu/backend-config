@@ -422,8 +422,16 @@
                       <label for="withZoom">mit Zoom</label>
                     </mdb-col>
                     <mdb-col xl="1"  md="2"  lg="1" sm="12" class="pb-2">
+                      <input type="checkbox" class="form-check-input" v-model="complexField" id="complexField" name="complexField">
+                      <label for="complexField">Komplex Feld</label>
+                    </mdb-col>
+                    <mdb-col xl="1"  md="2"  lg="1" sm="12" class="pb-2">
                       <input type="checkbox" class="form-check-input" v-model="withLegend" id="withLegend" name="withLegend">
                       <label for="withLegend">mit Legend</label>
+                    </mdb-col>
+                    <mdb-col xl="1"  md="2"  lg="1" sm="12" class="pb-2">
+                      <input type="input" class="form-check-input" placeholder="Wrapper Css" v-model="wrapperCssClass" id="wrapperCssClass" name="wrapperCssClass">
+                      <label for="wrapperCssClass">Wrapper css</label>
                     </mdb-col>
                   </mdb-row>
                 </mdb-card-body>
@@ -1734,7 +1742,9 @@
         configuration_svgContent:'',
         isHidden: null,
         withZoom: null,
+        complexField: 0,
         withLegend: null,
+        wrapperCssClass: '',
         groupnameNameToCopy: '',
         propertyNameRightClicked:'',
         propertyNameTarget: '',
@@ -3120,7 +3130,9 @@
                     self.svgContent = self.propertiesValue[self.currentSelectedProperty].svg;
                     self.isHidden = parseInt(self.propertiesValue[self.currentSelectedProperty].hidden);
                     self.withZoom = parseInt(self.propertiesValue[self.currentSelectedProperty].zoom);
+                    self.complexField = parseInt(self.propertiesValue[self.currentSelectedProperty].complexField);
                     self.withLegend = parseInt(self.propertiesValue[self.currentSelectedProperty].withLegend);
+                    self.wrapperCssClass = self.propertiesValue[self.currentSelectedProperty].wrapperCssClass;
                     self.dmgIsbasicPrice = self.propertiesValue[self.currentSelectedProperty].dmgIsbasicPrice;
                     self.unitValue = self.propertiesValue[self.currentSelectedProperty].unitValue;
                     self.displayedUnitValue = self.propertiesValue[self.currentSelectedProperty].displayedUnitValue;
@@ -3553,7 +3565,7 @@
         let propertyValueItem = {uniqueId: this.uniqueId, fieldId: this.fieldId, titel: this.fieldTitel, expression: this.expression, imageUploadName: this.templateImage, position: this.fieldPosition, valueCssClass: this.valueCssClass, maxValue: this.maxValue, minValue: this.minValue, multiplyFields:  multiplyFieldsLocal,
           chooseValueForMatrix: this.chooseValueForMatrix, matrixOperatorX : this.matrixOperatorX, matrixOperatorY: this.matrixOperatorY, propertyInformation: propertyInformation, relations: this.matrixAttachedToProperty, unitValue: this.unitValue, displayedUnitValue: this.displayedUnitValue, propertyToImageBox: this.propertyToImageBox,
           propertyAdditionalInformation: propertyAdditionalInformation, standardValue: this.standardValue, valueBreite: this.valueBreite, valueHoehe: this.valueHoehe, valuePosX: this.valuePosX, valuePosY: this.valuePosY, imgWidth: this.imgWidth, imgHeight: this.imgHeight, relatedMultiplyFields: relatedMultiplyFieldsLocal,
-          operatorCombi: this.operatorCombi, dataTyp : this.data_type, mandatory_field: this.requiredField, fieldActive: this.activeField, fieldValue: this.fieldValue, price: this.fieldPriceValue, matrix: this.matrixCollection, additionalData: this.selectBoxData, isDigit: this.isDigit, svg: this.svgContent, hidden: this.isHidden, zoom: this.withZoom, withLegend: this.withLegend, dmgIsbasicPrice: this.dmgIsbasicPrice};
+          operatorCombi: this.operatorCombi, dataTyp : this.data_type, mandatory_field: this.requiredField, fieldActive: this.activeField, fieldValue: this.fieldValue, price: this.fieldPriceValue, matrix: this.matrixCollection, additionalData: this.selectBoxData, isDigit: this.isDigit, svg: this.svgContent, hidden: this.isHidden, zoom: this.withZoom, complexField: this.complexField, withLegend: this.withLegend, wrapperCssClass: this.wrapperCssClass, dmgIsbasicPrice: this.dmgIsbasicPrice};
 
         var encodedPropertyValueRecord = this.encode(JSON.stringify(propertyValueItem));
         var encodedSelectedProperty =  this.encode(this.currentSelectedProperty);
@@ -3602,7 +3614,9 @@
         this.svgContent = '';
         this.isHidden = 0;
         this.withZoom = 0;
+        this.complexField = 0;
         this.withLegend = 0;
+        this.wrapperCssClass = '';
         this.unitValue = '';
         this.displayedUnitValue = '';
         this.matrixOperatorX = '';
