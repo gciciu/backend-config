@@ -277,8 +277,8 @@
         //customerId: 508391, // gals-technik
         //customerId: 528606,
         //customerId: 528606, // grabsteine
-       //customerId: 639646,//my
-        // customerId: 639500, //tour
+        //customerId: 639646,//my
+        //customerId: 639500, //tour
         //customerId: 739647, //Turis
         customerId: 639646, //MySi
         //customerId: 428398, //Dm
@@ -361,7 +361,7 @@
         }
 
         //localStorage.setItem('selectedTemplateId', selectedComponent.id);
-        //localStorage.setItem('selectedTemplateName', selectedComponent.name);
+        localStorage.setItem('selectedTemplateName', selectedComponent.name);
         /*
         this.$router.push(
             {
