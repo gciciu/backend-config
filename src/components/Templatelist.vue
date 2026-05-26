@@ -463,7 +463,6 @@
         let self = this;
         const files = e.target.files;
         let filename = files[0].name;
-
         const fr = new FileReader();
         fr.onload = e => {
           const tplEncodedString = e.target.result;
